@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CBSE School Timetable Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">TT</span>
+        <div>
+          <strong>CBSE Timetable</strong>
+          <small>Constraint Scheduler</small>
+        </div>
+      </div>
+      <nav aria-label="Main navigation">
+        <button class="nav-button active" data-view="dashboard">Dashboard</button>
+        <button class="nav-button" data-view="setup">Academic Setup</button>
+        <button class="nav-button" data-view="masterdata">Master Data</button>
+        <button class="nav-button" data-view="assignments">Assignments</button>
+        <button class="nav-button" data-view="generate">Generation Center</button>
+        <button class="nav-button" data-view="timetable">Timetable Editor</button>
+        <button class="nav-button" data-view="reports">Reports</button>
+        <button class="nav-button" data-view="substitution">Substitution Desk</button>
+      </nav>
+      <div class="version-card">
+        <span id="versionStatus">Draft</span>
+        <strong id="versionName">Version 1</strong>
+        <small id="versionMeta">Not generated yet</small>
+      </div>
+    </aside>
+
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p id="pageSubtitle">Data readiness, conflicts, workloads, and current timetable state.</p>
+        </div>
+        <div class="top-actions">
+          <button id="loadSampleBtn" class="secondary">Load Sample Data</button>
+          <button id="generateNowBtn" class="primary">Generate Timetable</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view active-view">
+        <div class="metrics-grid">
+          <article class="metric"><span>Teachers</span><strong id="metricTeachers">0</strong><small>Active staff</small></article>
+          <article class="metric"><span>Sections</span><strong id="metricSections">0</strong><small>Class groups</small></article>
+          <article class="metric"><span>Assignments</span><strong id="metricAssignments">0</strong><small>Weekly demands</small></article>
+          <article class="metric"><span>Scheduled</span><strong id="metricScheduled">0%</strong><small>Mandatory periods</small></article>
+        </div>
+
+        <div class="split">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Readiness Checks</h2>
+              <button id="validateBtn" class="ghost">Validate</button>
+            </div>
+            <div id="validationList" class="issue-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Generation Quality</h2>
+              <span id="qualityScore" class="score">0</span>
+            </div>
+            <div id="qualityBars" class="quality-bars"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="setup" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>School Week</h2>
+            <button id="addPeriodBtn" class="secondary">Add Period</button>
+          </div>
+          <div id="periodGrid" class="period-grid"></div>
+        </section>
+      </section>
+
+      <section id="masterdata" class="view">
+        <section class="master-workspace">
+          <div class="master-hero">
+            <div>
+              <span class="eyebrow">School foundation</span>
+              <h2>Master Data</h2>
+              <p>Manage teachers, class sections, subjects, rooms, and teaching eligibility before generating the timetable.</p>
+            </div>
+            <div class="inline-actions">
+              <button id="addTeacherBtn" class="primary">Add Teacher</button>
+              <button id="addSectionBtn" class="secondary">Add Section</button>
+              <button id="addSubjectBtn" class="secondary">Add Subject</button>
+              <button id="addRoomBtn" class="secondary">Add Room</button>
+            </div>
+          </div>
+
+          <div class="master-summary">
+            <article><span>Teachers</span><strong id="masterTeachers">0</strong></article>
+            <article><span>Sections</span><strong id="masterSections">0</strong></article>
+            <article><span>Subjects</span><strong id="masterSubjects">0</strong></article>
+            <article><span>Rooms</span><strong id="masterRooms">0</strong></article>
+          </div>
+
+          <div class="master-shell">
+            <aside class="master-tabs" aria-label="Master data category">
+              <button class="tab active" data-table="teachers">Teachers</button>
+              <button class="tab" data-table="sections">Sections</button>
+              <button class="tab" data-table="subjects">Subjects</button>
+              <button class="tab" data-table="rooms">Rooms</button>
+            </aside>
+            <div class="master-content">
+              <div class="master-content-head">
+                <div>
+                  <h3 id="masterTableTitle">Teachers</h3>
+                  <p id="masterTableHint">Teacher profiles, workload limits, and class-subject eligibility.</p>
+                </div>
+              </div>
+              <div class="table-wrap master-table-wrap">
+                <table id="masterTable"></table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="assignments" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Teaching Assignment Matrix</h2>
+            <div class="inline-actions">
+              <button id="addAssignmentBtn" class="secondary">Add Assignment</button>
+              <button id="downloadTemplateBtn" class="ghost">CSV Template</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="assignmentTable"></table>
+          </div>
+        </section>
+      </section>
+
+      <section id="generate" class="view">
+        <div class="split">
+          <section class="panel">
+            <div class="panel-head"><h2>Generation Controls</h2></div>
+            <form id="generationForm" class="form-grid">
+              <label>Solver time limit
+                <input id="timeLimit" type="number" min="5" max="900" value="60" />
+              </label>
+              <label>Random seed
+                <input id="seedInput" type="number" value="42" />
+              </label>
+              <label>Scope
+                <select id="scopeSelect">
+                  <option value="all">Full school</option>
+                  <option value="middle">Middle school only</option>
+                  <option value="senior">Senior secondary only</option>
+                </select>
+              </label>
+              <label class="checkbox"><input id="respectLocks" type="checkbox" checked /> Preserve locked entries</label>
+            </form>
+            <button id="runGenerationBtn" class="primary wide">Start Generation Job</button>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Job Lifecycle</h2><span id="jobState" class="pill">Idle</span></div>
+            <ol id="jobSteps" class="job-steps"></ol>
+          </section>
+        </div>
+      </section>
+
+      <section id="timetable" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Timetable Editor</h2>
+            <div class="toolbar">
+              <select id="viewMode">
+                <option value="section">Class-wise</option>
+                <option value="teacher">Teacher-wise</option>
+                <option value="room">Room-wise</option>
+              </select>
+              <select id="entitySelect"></select>
+              <button id="lockVisibleBtn" class="ghost">Lock Visible</button>
+              <button id="exportCsvBtn" class="secondary">Export CSV</button>
+            </div>
+          </div>
+          <div id="timetableGrid" class="timetable-grid"></div>
+          <div id="movePanel" class="move-panel" hidden></div>
+        </section>
+      </section>
+
+      <section id="reports" class="view">
+        <div class="reports-grid">
+          <section class="panel">
+            <div class="panel-head"><h2>Teacher Workload</h2></div>
+            <div class="table-wrap"><table id="workloadTable"></table></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Room Utilization</h2></div>
+            <div class="table-wrap"><table id="roomReportTable"></table></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="substitution" class="view">
+        <div class="split">
+          <section class="panel">
+            <div class="panel-head"><h2>Record Absence</h2></div>
+            <form id="absenceForm" class="form-grid">
+              <label>Teacher
+                <select id="absenceTeacher"></select>
+              </label>
+              <label>Day
+                <select id="absenceDay"></select>
+              </label>
+              <label>Period
+                <select id="absencePeriod"></select>
+              </label>
+            </form>
+            <button id="recommendSubsBtn" class="primary wide">Find Substitutes</button>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Recommendations</h2></div>
+            <div id="substitutionResults" class="issue-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="assignmentDialog">
+      <form method="dialog" id="assignmentForm" class="dialog-form">
+        <h2>Add Teaching Assignment</h2>
+        <label>Teacher <select id="newTeacher"></select></label>
+        <label>Subject <select id="newSubject"></select></label>
+        <label>Section <select id="newSection"></select></label>
+        <label>Periods per week <input id="newPeriods" type="number" min="1" max="12" value="4" /></label>
+        <label>Block length <input id="newBlock" type="number" min="1" max="3" value="1" /></label>
+        <label>Room type <select id="newRoomType"></select></label>
+        <menu>
+          <button value="cancel" class="ghost">Cancel</button>
+          <button id="saveAssignmentBtn" value="default" class="primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="teacherDialog">
+      <form method="dialog" id="teacherForm" class="dialog-form">
+        <h2 id="teacherDialogTitle">Add Teacher</h2>
+        <input id="teacherEditId" type="hidden" />
+        <label>Teacher code <input id="teacherCode" required /></label>
+        <label>Name <input id="teacherName" required /></label>
+        <label>Department <input id="teacherDept" required /></label>
+        <label>Max weekly periods <input id="teacherMaxWeekly" type="number" min="1" max="60" value="28" /></label>
+        <label>Max daily periods <input id="teacherMaxDaily" type="number" min="1" max="12" value="6" /></label>
+        <section class="assignment-builder">
+          <div class="builder-head">
+            <h3>Classes and Subjects</h3>
+            <button id="addTeacherAssignmentRow" type="button" class="secondary compact">Add Class Subject</button>
+          </div>
+          <div id="teacherAssignmentRows" class="builder-rows"></div>
+        </section>
+        <menu>
+          <button value="cancel" class="ghost">Cancel</button>
+          <button id="saveTeacherBtn" value="default" class="primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="sectionDialog">
+      <form method="dialog" id="sectionForm" class="dialog-form">
+        <h2 id="sectionDialogTitle">Add Section</h2>
+        <input id="sectionEditId" type="hidden" />
+        <label>Section code <input id="sectionCode" required /></label>
+        <label>Grade / Class <input id="sectionGrade" required /></label>
+        <label>Section name <input id="sectionName" required /></label>
+        <label>Student strength <input id="sectionStrength" type="number" min="1" max="100" value="40" /></label>
+        <label>Home room <select id="sectionHomeRoom"></select></label>
+        <label>Periods per day <input id="sectionPeriodsPerDay" type="number" min="1" max="12" value="8" /></label>
+        <menu>
+          <button value="cancel" class="ghost">Cancel</button>
+          <button id="saveSectionBtn" value="default" class="primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="subjectDialog">
+      <form method="dialog" id="subjectForm" class="dialog-form">
+        <h2 id="subjectDialogTitle">Add Subject</h2>
+        <input id="subjectEditId" type="hidden" />
+        <label>Subject code <input id="subjectCode" required /></label>
+        <label>Subject name <input id="subjectName" required /></label>
+        <label>Room type
+          <select id="subjectRoomType">
+            <option value="CLASSROOM">Classroom</option>
+            <option value="LAB">Lab</option>
+            <option value="SPORTS">Sports</option>
+          </select>
+        </label>
+        <label>Color <input id="subjectColor" type="color" value="#176b87" /></label>
+        <menu>
+          <button value="cancel" class="ghost">Cancel</button>
+          <button id="saveSubjectBtn" value="default" class="primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="roomDialog">
+      <form method="dialog" id="roomForm" class="dialog-form">
+        <h2 id="roomDialogTitle">Add Room</h2>
+        <input id="roomEditId" type="hidden" />
+        <label>Room code <input id="roomCode" required /></label>
+        <label>Room name <input id="roomName" required /></label>
+        <label>Room type
+          <select id="roomType">
+            <option value="CLASSROOM">Classroom</option>
+            <option value="LAB">Lab</option>
+            <option value="SPORTS">Sports</option>
+          </select>
+        </label>
+        <label>Capacity <input id="roomCapacity" type="number" min="1" max="500" value="40" /></label>
+        <menu>
+          <button value="cancel" class="ghost">Cancel</button>
+          <button id="saveRoomBtn" value="default" class="primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
